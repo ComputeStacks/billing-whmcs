@@ -22,7 +22,7 @@ if ( !defined('WHMCS') ) {
  */
 function computestacks_order_redirect($vars) {
   if ($_SERVER['HTTP_USER_AGENT'] != 'Ruby') { /* Prevent API calls from being redirected */
-    $invoice = localAPI('GetInvoice', array( 'invoiceid' => $vars['invoiceid'] ), null);
+    $invoice = localAPI('GetInvoice', array( 'invoiceid' => $vars['invoiceid'] ), 'cstacks');
     if ($invoice['result'] == 'success' && $_SESSION['uid'] == $invoice['userid']) {
       foreach($invoice['items']['item'] as $item) {
         if ($item['type'] == 'Upgrade') {
@@ -31,9 +31,9 @@ function computestacks_order_redirect($vars) {
           $service_id = $item['relid'];
         }
         if (!empty($service_id)) {
-          $services = localAPI('GetClientsProducts', array( 'serviceid' =>  $service_id), null);
+          $services = localAPI('GetClientsProducts', array( 'serviceid' =>  $service_id), 'cstacks');
           foreach ($services['products']['product'] as $service) {
-            $products = localAPI('GetProducts', array( 'pid' => $service['pid'] ), null);
+            $products = localAPI('GetProducts', array( 'pid' => $service['pid'] ), 'cstacks');
             $product = $products['products']['product'][0];
             if ($product['module'] == 'computestacks') {
               // Build redirect

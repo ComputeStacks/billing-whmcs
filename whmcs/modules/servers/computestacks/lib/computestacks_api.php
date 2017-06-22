@@ -65,6 +65,9 @@ class CSApi
 
   public function orderProvision($orderid) {
     try {
+      if ($orderid == null) {
+        return "Missing OrderID";
+      }
       $path = 'orders/' . $orderid . '/process?find_by_external_id=true';
       $auth_token = $this->authToken();
       $result = $this->connect($path, $auth_token, null, 'PUT');

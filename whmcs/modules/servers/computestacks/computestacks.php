@@ -55,8 +55,24 @@ function computestacks_CreateAccount(array $params)
 {
     try {
         $orderid = $params['model']['attributes']['orderid'];
-        $cs = new CSApi();
-        return $cs->orderProvision($orderid);
+        if ($orderid == null) {
+            $serviceid = $params['serviceid'];
+            $clientid = $params['userid'];
+            // Determine order ID from the serviceid
+            $results = localAPI('GetClientsProducts', ['clientid' => $clientid, 'serviceid' => $serviceid], 'cstacks');
+            if ($results['numreturned'] < 1) {
+                return "Failed to find OrderID for service: " . $serviceid;
+            } else {
+                $orderid = $results['products']['product'][0]['orderid'];
+            }
+        }
+        // Final sanity check
+        if ($orderid == null) {
+            return "Failed to find OrderID. Unable to provision.";
+        } else {
+            $cs = new CSApi();
+            return $cs->orderProvision($orderid);
+        }
     } catch (Exception $e) {
         logModuleCall(
             'computestacks',
