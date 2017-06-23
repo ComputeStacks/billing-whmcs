@@ -26,7 +26,7 @@ The normal provisioning module will actually tell ComputeStacks to proceed with 
 
 ## Minimum Requirements
 
-  - WHMCS: v7.2+
+  - WHMCS: v7.1+
   - ComputeStacks: v4.0+
 
 ## Installation
