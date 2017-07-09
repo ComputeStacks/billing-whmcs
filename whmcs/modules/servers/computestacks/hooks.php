@@ -57,5 +57,12 @@ function computestacks_update_client($vars) {
   $cs->editClient($vars);
 }
 
+function computestacks_view_invoice($vars) {
+  $cs = new CSApi();
+  $cs_vars = $cs->settings();
+  return array('cs_return' => $cs_vars['endpoint']);
+}
+
+add_hook('ClientAreaPageViewInvoice', 1, "computestacks_view_invoice");
 add_hook("InvoicePaid", 1, "computestacks_order_redirect");
 add_hook("ClientEdit", 1, "computestacks_update_client");

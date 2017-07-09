@@ -41,6 +41,13 @@ class CSApi
     }
   }
 
+  public function settings() {
+    return array(
+      'endpoint' => self::$endpoint,
+      'api_key' => self::$api_key
+    );
+  }
+
   // Generate Redirect URL to send the user BACK to computestacks, after payment is confirmed.
   public function buildOrderRedirect() {
     try {
