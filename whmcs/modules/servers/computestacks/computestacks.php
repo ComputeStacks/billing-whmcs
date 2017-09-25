@@ -126,7 +126,7 @@ function computestacks_TerminateAccount(array $params)
     try {
         $subscription_id = $params['serviceid'];
         $cs = new CSApi();
-        return $cs->destroyContainerService($subscription_id);
+        return $cs->destroyService($subscription_id);
     } catch (Exception $e) {
         logModuleCall(
             'computestacks',
@@ -145,8 +145,13 @@ function computestacks_ChangePackage(array $params)
         $cs = new CSApi();
         $subscription_id = $params['serviceid'];
         $product_id = $params['pid'];
-        $container_qty = $params['configoptions']['Container'];
-        return $cs->modifyContainerService($subscription_id, $product_id, $container_qty);
+        if ($params['configoption2'] == 'vm') {
+            return $cs->modifyDeviceService($subscription_id, $product_id);
+        } else {
+            $container_qty = $params['configoptions']['Container'];
+            return $cs->modifyContainerService($subscription_id, $product_id, $container_qty);
+        }        
+        
     } catch (Exception $e) {
         logModuleCall(
             'computestacks',

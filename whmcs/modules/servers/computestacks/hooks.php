@@ -60,6 +60,13 @@ function computestacks_update_client($vars) {
 function computestacks_view_invoice($vars) {
   $cs = new CSApi();
   $cs_vars = $cs->settings();
+  // logModuleCall(
+  //     'computestacks',
+  //     __FUNCTION__,
+  //     $cs_vars,
+  //     $cs_vars['endpoint'],
+  //     ''
+  // );
   return array('cs_return' => $cs_vars['endpoint']);
 }
 

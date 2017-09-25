@@ -103,6 +103,43 @@ class CSApi
     }    
   }
 
+  public function modifyDeviceService($subscription_id, $product_id) {
+    try {
+      $auth_token = $this->authToken();
+      $data = array(
+        'device' => array(
+          'package_id' => $product_id,
+          'external_product' => true
+        )
+      );
+      $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
+      $result = $this->connect($path, $auth_token, $data, 'PUT');
+      if ($result->getStatusCode() == 200) {
+        return 'success';
+      } else {
+        $errorMsg = json_decode($result->getBody());
+        logModuleCall(
+          'computestacks',
+          __FUNCTION__,
+          $errorMsg,
+          "Modify Service Error",
+          null
+        );
+        return implode(" ", $errorMsg);
+      }
+      
+    } catch (Exception $e) {
+      logModuleCall(
+        'computestacks',
+        __FUNCTION__,
+        $params,
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+      return $e->getMessage();
+    } 
+  }
+
   public function modifyContainerService($subscription_id, $product_id, $qty) {
     try {
       $auth_token = $this->authToken();
@@ -141,7 +178,7 @@ class CSApi
     }    
   }
 
-  public function destroyContainerService($subscription_id, $order_id) {
+  public function destroyService($subscription_id, $order_id) {
     try {
       $auth_token = $this->authToken();
 
