@@ -21,8 +21,17 @@ if ( !defined('WHMCS') ) {
  *  - The invoice containers a product with the ComputeStacks module.
  */
 function computestacks_order_redirect($vars) {
-  if ($_SERVER['HTTP_USER_AGENT'] != 'Ruby') { /* Prevent API calls from being redirected */
+  if ($_SERVER['HTTP_USER_AGENT'] != 'Ruby') { /* Prevent API calls from being redirected */    
     $invoice = localAPI('GetInvoice', array( 'invoiceid' => $vars['invoiceid'] ), 'cstacks');
+    if ($invoice['result'] == 'error') {
+        logModuleCall(
+          'computestacks',
+          __FUNCTION__,
+          $invoice,
+          'Error Redirecting user.',
+          ''
+        );
+    }
     if ($invoice['result'] == 'success' && $_SESSION['uid'] == $invoice['userid']) {
       foreach($invoice['items']['item'] as $item) {
         if ($item['type'] == 'Upgrade') {
