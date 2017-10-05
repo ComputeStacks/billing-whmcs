@@ -47,7 +47,7 @@ function computestacks_order_redirect($vars) {
             if ($product['module'] == 'computestacks') {
               // Build redirect
               $cs = new CSApi();
-              $redirect_url = "Location: " . $cs->buildOrderRedirect();
+              $redirect_url = "Location: " . $cs->buildOrderRedirect($product['pid']);
               header($redirect_url);
               print_r($product);
               exit; 

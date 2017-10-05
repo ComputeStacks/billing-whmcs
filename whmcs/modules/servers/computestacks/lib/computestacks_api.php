@@ -49,10 +49,11 @@ class CSApi
   }
 
   // Generate Redirect URL to send the user BACK to computestacks, after payment is confirmed.
-  public function buildOrderRedirect() {
+  public function buildOrderRedirect($product_id) {
     try {
       $data = array(
         "status" => 'ok',
+        "product_id" => $product_id,
         "exp" => time() + 3600, // 1 hour TTL.
       );
       $jwt = JWT::encode($data, self::$shared_secret);
