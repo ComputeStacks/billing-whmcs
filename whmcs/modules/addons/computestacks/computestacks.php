@@ -44,6 +44,11 @@ function computestacks_config() {
         'Type' => 'password',
         'Size' => 256
       ),
+      'require_auth' => array(
+        'FriendlyName' => 'Require 2FA',
+        'Description' => 'Users with 2FA enabled in ComputeStacks will be preventd from logging into WHMCS directly until they successfully authenticate with ComputeStacks.',
+        'Type' => 'yesno'
+      ),
     )
   );
 
@@ -59,11 +64,13 @@ function computestacks_output($vars) {
   $configEndpoint = $vars['endpoint'];
   $configApiSecret = $vars['api_secret'];
   $configSharedSecret = $vars['shared_secret'];
+  $configRequireAuth = $vars['require_auth'];
 
   $output = "Endpoint: " . $configEndpoint . "<br />";
   $output .= "Api Key: " . $configApiKey . "<br />";
   $output .= "Api Secret: " . $configApiSecret . "<br />";
-  $output .= "Shared Secret: " . $configSharedSecret;
+  $output .= "Shared Secret: " . $configSharedSecret . "<br />";
+  $output .= "Require 2FA" . $configRequireAuth;
 
   echo $output;     
 }

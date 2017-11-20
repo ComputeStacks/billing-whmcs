@@ -69,16 +69,26 @@ function computestacks_update_client($vars) {
 function computestacks_view_invoice($vars) {
   $cs = new CSApi();
   $cs_vars = $cs->settings();
-  // logModuleCall(
-  //     'computestacks',
-  //     __FUNCTION__,
-  //     $cs_vars,
-  //     $cs_vars['endpoint'],
-  //     ''
-  // );
   return array('cs_return' => $cs_vars['endpoint']);
+}
+
+function computestacks_login($vars) {
+  $cs = new CSApi();
+  $cs_vars = $cs->settings();
+  if ($cs_vars['require_auth'] == true) {
+    if ($cs->clientHas2fa($vars['userid'], $_SERVER['REMOTE_ADDR']) == 'failed') {    
+      foreach ($_COOKIE as $key => $value) {
+        if (substr($key, 0,5) == 'WHMCS') {
+          setcookie($key, "", time()-3600);
+        }
+      }
+      header('Location: ' . $cs_vars['endpoint'] . '?from_sso=true');
+      exit;
+    }
+  }  
 }
 
 add_hook('ClientAreaPageViewInvoice', 1, "computestacks_view_invoice");
 add_hook("InvoicePaid", 1, "computestacks_order_redirect");
 add_hook("ClientEdit", 1, "computestacks_update_client");
+add_hook("ClientLogin", 1, "computestacks_login");

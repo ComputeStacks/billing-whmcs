@@ -10,6 +10,7 @@
 
 require_once 'vendor/autoload.php';
 use \Firebase\JWT\JWT;
+use \GuzzleHttp\Client;
 use WHMCS\Database\Capsule;
 
 class CSApi
@@ -19,6 +20,7 @@ class CSApi
   private static $api_key = null;
   private static $api_secret = null;
   private static $shared_secret = null;
+  private static $require_auth = false;
 
   // Load credentials from Addon.
   function __construct() {
@@ -37,6 +39,13 @@ class CSApi
         case 'shared_secret':
           self::$shared_secret = $config->value;
           break;
+        case 'require_auth':
+          if ($config->value == 'on') {
+            self::$require_auth = true;
+          } else {
+            self::$require_auth = false;
+          }
+          break;
       }
     }
   }
@@ -44,7 +53,8 @@ class CSApi
   public function settings() {
     return array(
       'endpoint' => self::$endpoint,
-      'api_key' => self::$api_key
+      'api_key' => self::$api_key,
+      'require_auth' => self::$require_auth,
     );
   }
 
@@ -215,12 +225,11 @@ class CSApi
     try {
       $auth_token = $this->authToken();
       $path = 'subscriptions/' . $subscription_id . '/' . $action . '?find_by_external_id=true';
-      $result = $this->connect($path, $auth_token, null, 'PUT');
-
-      if ($result->getStatusCode() == 202) {
+      $response = $this->connect($path, $auth_token, null, 'PUT');
+      if ($response->getStatusCode() == 202) {
         return 'success';
       } else {
-        $errorMsg = json_decode($result->getBody());
+        $errorMsg = json_decode($response->getBody());
         logModuleCall(
           'computestacks',
           __FUNCTION__,
@@ -261,7 +270,7 @@ class CSApi
           ]
         ];
         $update_path = 'users/' . $remote_data->user->id;
-        $update_user = $this->connect($update_path, $auth_token, $update_data, 'PUT');
+        $response = $this->connect($update_path, $auth_token, $update_data, 'PUT');
         return 'success';
       }
     } catch (Exception $e) {
@@ -286,6 +295,37 @@ class CSApi
     }
   }
 
+  public function clientHas2fa($clientid, $remote_ip) {
+    try {
+      $auth_token = $this->authToken();
+      $headers = array(
+        'Accept' => 'application/json',
+        'Authorization' => $auth_token
+      );
+      $data = array(
+        'headers' => $headers
+      );
+      $client = new Client();
+      $path = self::$endpoint . '/api/user/' . $clientid . '/authcheck?rip=' . $remote_ip;
+      $request = $client->createRequest('POST', $path, $data);
+      $response = $client->send($request);
+      if ($response->getStatusCode() == 202) {
+        return 'success';
+      } else {
+        return 'failed';
+      }
+    } catch (Exception $e) {
+      logModuleCall(
+        'computestacks',
+        __FUNCTION__,
+        $params,
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+      return $e->getMessage(); 
+    }
+  }
+
   // Generate auth token to log into CS using apikey / secret.
   public function authToken() {
     $headers = ['Accept' => 'application/json'];
@@ -295,8 +335,10 @@ class CSApi
         'api_secret' => self::$api_secret
       ]
     ];
-    $client = new GuzzleHttp\Client(['base_uri' => self::$endpoint]);
-    $response = $client->request('POST', 'api/auth', $data);
+    $client = new Client();
+    $path = self::$endpoint . '/api/auth';
+    $request = $client->createRequest('POST', $path, $data);
+    $response = $client->send($request);
     $result = json_decode($response->getBody());
     return $result->token;
 
@@ -316,9 +358,10 @@ class CSApi
       $data['json'] = $body;
     }
     $base_uri = self::$endpoint . '/api/admin/';
-    $client = new GuzzleHttp\Client(['base_uri' => $base_uri]);
-    return $client->request($method, $path, $data);
-
+    // ['base_uri' => $base_uri]
+    $client = new Client();
+    $request = $client->createRequest($method, $base_uri . $path, $data);
+    return $client->send($request);
   }
 
 }

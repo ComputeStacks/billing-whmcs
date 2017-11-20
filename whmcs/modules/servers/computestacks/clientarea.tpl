@@ -1,0 +1,1 @@
+<p><a href="https://{$serverhostname}" target="_blank" class="btn btn-block btn-info">Launch Control Panel</a></p>
