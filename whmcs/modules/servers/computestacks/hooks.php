@@ -88,7 +88,16 @@ function computestacks_login($vars) {
   }  
 }
 
+function computestacks_view_service($vars) {
+  if ($vars['modulename'] == 'computestacks') {
+    $cs = new CSApi();
+    $cs_vars = $cs->settings();
+    return array('cs_return' => $cs_vars['endpoint']);
+  }  
+}
+
 add_hook('ClientAreaPageViewInvoice', 1, "computestacks_view_invoice");
 add_hook("InvoicePaid", 1, "computestacks_order_redirect");
 add_hook("ClientEdit", 1, "computestacks_update_client");
 add_hook("ClientLogin", 1, "computestacks_login");
+add_hook("ClientAreaProductDetailsPreModuleTemplate", 1, "computestacks_view_service");

@@ -286,15 +286,6 @@ class CSApi
     
   }
 
-  public function testConnection() {    
-    $auth_token = $this->authToken();
-    if (strlen($auth_token) > 1) {
-      return 'success';
-    } else {
-      return 'Failed to connect.';
-    }
-  }
-
   public function clientHas2fa($clientid, $remote_ip) {
     try {
       $auth_token = $this->authToken();
@@ -342,6 +333,15 @@ class CSApi
     $result = json_decode($response->getBody());
     return $result->token;
 
+  }
+
+  public function testConnection() {    
+    $auth_token = $this->authToken();
+    if (strlen($auth_token) > 1) {
+      return 'success';
+    } else {
+      return 'Failed to connect.';
+    }
   }
 
   // API Call to CS.
