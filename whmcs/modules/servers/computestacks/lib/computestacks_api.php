@@ -289,12 +289,12 @@ class CSApi
   public function clientHas2fa($clientid, $remote_ip) {
     try {
       $auth_token = $this->authToken();
-      $headers = array(
-        'Accept' => 'application/json',
-        'Authorization' => $auth_token
-      );
       $data = array(
-        'headers' => $headers
+        'headers' => [
+          'Accept' => 'application/json; api_version=41',
+          'Content-Type' => 'application/json',
+          'Authorization' => $auth_token
+        ]
       );
       $client = new Client();
       $path = self::$endpoint . '/api/user/' . $clientid . '/authcheck?rip=' . $remote_ip;
@@ -319,8 +319,11 @@ class CSApi
 
   // Generate auth token to log into CS using apikey / secret.
   public function authToken() {
-    $headers = ['Accept' => 'application/json'];
     $data = [
+      'headers' => [
+        'Accept' => 'application/json; api_version=41',
+        'Content-Type' => 'application/json'
+      ],
       'json' => [
         'api_key' => self::$api_key,
         'api_secret' => self::$api_secret
@@ -346,13 +349,12 @@ class CSApi
 
   // API Call to CS.
   private function connect($path, $token, $body, $method = 'POST') {
-
-    $headers = array(
-      'Accept' => 'application/json',
-      'Authorization' => $token
-    );
     $data = array(
-      'headers' => $headers
+      'headers' => [
+        'Accept' => 'application/json; api_version=41',
+        'Content-Type' => 'application/json',
+        'Authorization' => $token
+      ]
     );
     if ($body != null) {
       $data['json'] = $body;
