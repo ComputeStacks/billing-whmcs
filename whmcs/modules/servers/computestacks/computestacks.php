@@ -90,7 +90,7 @@ function computestacks_SuspendAccount(array $params)
     try {
         $subscription_id = $params['serviceid'];
         $cs = new CSApi();
-        return $cs->toggleSuspendedService($subscription_id, 'suspend');
+        return $cs->toggleSuspendedService($subscription_id, 'POST');
     } catch (Exception $e) {
         logModuleCall(
             'computestacks',
@@ -108,7 +108,7 @@ function computestacks_UnsuspendAccount(array $params)
     try {
         $subscription_id = $params['serviceid'];
         $cs = new CSApi();
-        return $cs->toggleSuspendedService($subscription_id, 'unsuspend');
+        return $cs->toggleSuspendedService($subscription_id, 'DELETE');
     } catch (Exception $e) {
         logModuleCall(
             'computestacks',

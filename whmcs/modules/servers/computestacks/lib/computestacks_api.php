@@ -86,10 +86,10 @@ class CSApi
       if ($orderid == null) {
         return "Missing OrderID";
       }
-      $path = 'orders/' . $orderid . '/process?find_by_external_id=true';
+      $path = 'orders/' . $orderid . '/process_order?find_by_external_id=true';
       $auth_token = $this->authToken();
-      $result = $this->connect($path, $auth_token, null, 'PUT');
-      if ($result->getStatusCode() == 201) {
+      $result = $this->connect($path, $auth_token, null, 'POST');
+      if ($result->getStatusCode() == 202) {
         return 'success';
       } else {
         $errorMsg = json_decode($result->getBody());
@@ -224,8 +224,8 @@ class CSApi
   public function toggleSuspendedService($subscription_id, $action) {
     try {
       $auth_token = $this->authToken();
-      $path = 'subscriptions/' . $subscription_id . '/' . $action . '?find_by_external_id=true';
-      $response = $this->connect($path, $auth_token, null, 'PUT');
+      $path = 'subscriptions/' . $subscription_id . '/suspension?find_by_external_id=true';
+      $response = $this->connect($path, $auth_token, null, $action);      
       if ($response->getStatusCode() == 202) {
         return 'success';
       } else {
@@ -259,7 +259,7 @@ class CSApi
       // Determine if this is a real user..
       $remote_user_path = 'users/' . $params['userid'] . '?find_by_external_id=true';
       $remote_user = $this->connect($remote_user_path, $auth_token, null, 'GET');
-      if ($remote_user->getStatusCode() == 200) {
+      if ($remote_user->getStatusCode() == 202) {
         $remote_data = json_decode($remote_user->getBody());
         $update_data = [
           'user' => [
