@@ -54,6 +54,9 @@ function computestacks_ConfigOptions() {
 function computestacks_CreateAccount(array $params)
 {
     try {
+        if ($params['configoption1'] == 'metered') {
+          return 'success'; // Do nothing for metered orders.
+        }        
         $orderid = $params['model']['attributes']['orderid'];
         if ($orderid == null) {
             $serviceid = $params['serviceid'];
@@ -88,6 +91,9 @@ function computestacks_CreateAccount(array $params)
 function computestacks_SuspendAccount(array $params)
 {
     try {
+        if ($params['configoption1'] == 'metered') {
+          return 'success'; // Do nothing for metered orders.
+        }
         $subscription_id = $params['serviceid'];
         $cs = new CSApi();
         return $cs->toggleSuspendedService($subscription_id, 'POST');
@@ -106,6 +112,9 @@ function computestacks_SuspendAccount(array $params)
 function computestacks_UnsuspendAccount(array $params)
 {
     try {
+        if ($params['configoption1'] == 'metered') {
+          return 'success'; // Do nothing for metered orders.
+        }
         $subscription_id = $params['serviceid'];
         $cs = new CSApi();
         return $cs->toggleSuspendedService($subscription_id, 'DELETE');
@@ -124,6 +133,9 @@ function computestacks_UnsuspendAccount(array $params)
 function computestacks_TerminateAccount(array $params)
 {
     try {
+        if ($params['configoption1'] == 'metered') {
+          return 'success'; // Do nothing for metered orders.
+        }
         $subscription_id = $params['serviceid'];
         $cs = new CSApi();
         return $cs->destroyService($subscription_id);
@@ -142,6 +154,9 @@ function computestacks_TerminateAccount(array $params)
 function computestacks_ChangePackage(array $params)
 {
     try {
+        if ($params['configoption1'] == 'metered') {
+          return 'success'; // Do nothing for metered orders.
+        }
         $cs = new CSApi();
         $subscription_id = $params['serviceid'];
         $product_id = $params['pid'];

@@ -44,7 +44,7 @@ function computestacks_order_redirect($vars) {
           foreach ($services['products']['product'] as $service) {
             $products = localAPI('GetProducts', array( 'pid' => $service['pid'] ), 'cstacks');
             $product = $products['products']['product'][0];
-            if ($product['module'] == 'computestacks') {
+            if ($product['module'] == 'computestacks' && $service['billingcycle'] != 'One Time') {              
               // Build redirect
               $cs = new CSApi();
               $redirect_url = "Location: " . $cs->buildOrderRedirect($product['pid']);
