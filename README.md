@@ -31,6 +31,6 @@ The normal provisioning module will actually tell ComputeStacks to proceed with 
 
 ## Installation
 
-See [ComputeStacks WHMCS Documentation](https://computestacks.com/docs/billing/whmcs).
+See [ComputeStacks WHMCS Documentation](https://www.notion.so/computestacks/WHMCS-Plugin-Installation-80e83cbcd4184b2faedb8fc4ff0ea3b9).
 
 
