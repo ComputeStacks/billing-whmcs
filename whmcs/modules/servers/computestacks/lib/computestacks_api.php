@@ -72,7 +72,7 @@ class CSApi
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        $product_id,
         $e->getMessage(),
         $e->getTraceAsString()
       );
@@ -143,7 +143,7 @@ class CSApi
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        "modifyDeviceServices Fatal Error",
         $e->getMessage(),
         $e->getTraceAsString()
       );
@@ -181,7 +181,7 @@ class CSApi
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        "modifyContainerService fatal error",
         $e->getMessage(),
         $e->getTraceAsString()
       );
@@ -213,7 +213,7 @@ class CSApi
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        "destroyService fatal error",
         $e->getMessage(),
         $e->getTraceAsString()
       );
@@ -244,7 +244,7 @@ class CSApi
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        "toggleSuspendedService fatal error",
         $e->getMessage(),
         $e->getTraceAsString()
       );
@@ -309,7 +309,7 @@ class CSApi
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        "clientHas2FA fatal error",
         $e->getMessage(),
         $e->getTraceAsString()
       );
