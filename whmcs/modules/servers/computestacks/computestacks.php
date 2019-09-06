@@ -2,7 +2,7 @@
 /**
  * ComputeStacks Provisioning Module
  *
- * @see https://computestacks.atlassian.net/wiki/display/BILLING/WHMCS
+ * @see https://www.notion.so/WHMCS-Integration-80e83cbcd4184b2faedb8fc4ff0ea3b9
  *
  * @copyright Copyright (c)2017 Compute Stacks, LLC.
  *
