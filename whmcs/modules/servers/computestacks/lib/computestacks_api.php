@@ -252,7 +252,7 @@ class CSApi
       // Determine if this is a real user..
       $remote_user_path = 'users/' . $params['userid'] . '?find_by_external_id=true';
       $remote_user = $this->connect($remote_user_path, null, 'GET');
-      if ($remote_user->getStatusCode() == 202) {
+      if ($remote_user->getStatusCode() == 200) {
         $remote_data = json_decode($remote_user->getBody());
         $update_data = [
           'user' => [
