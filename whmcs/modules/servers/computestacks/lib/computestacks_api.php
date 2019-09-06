@@ -87,8 +87,7 @@ class CSApi
         return "Missing OrderID";
       }
       $path = 'orders/' . $orderid . '/process_order?find_by_external_id=true';
-      $auth_token = $this->authToken();
-      $result = $this->connect($path, $auth_token, null, 'POST');
+      $result = $this->connect($path, null, 'POST');
       if ($result->getStatusCode() == 202) {
         return 'success';
       } else {
@@ -116,7 +115,6 @@ class CSApi
 
   public function modifyDeviceService($subscription_id, $product_id) {
     try {
-      $auth_token = $this->authToken();
       $data = array(
         'device' => array(
           'package_id' => $product_id,
@@ -124,7 +122,7 @@ class CSApi
         )
       );
       $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
-      $result = $this->connect($path, $auth_token, $data, 'PUT');
+      $result = $this->connect($path, $data, 'PUT');
       if ($result->getStatusCode() == 200) {
         return 'success';
       } else {
@@ -153,7 +151,6 @@ class CSApi
 
   public function modifyContainerService($subscription_id, $product_id, $qty) {
     try {
-      $auth_token = $this->authToken();
       $data = array(
         'container_service' => array(
           'package_id' => $product_id,
@@ -162,7 +159,7 @@ class CSApi
         )
       );
       $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
-      $result = $this->connect($path, $auth_token, $data, 'PUT');
+      $result = $this->connect($path, $data, 'PUT');
       if ($result->getStatusCode() == 200) {
         return 'success';
       } else {
@@ -189,12 +186,10 @@ class CSApi
     }    
   }
 
-  public function destroyService($subscription_id, $order_id) {
+  public function destroyService($subscription_id) {
     try {
-      $auth_token = $this->authToken();
-
       $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
-      $result = $this->connect($path, $auth_token, null, 'DELETE');
+      $result = $this->connect($path, null, 'DELETE');
       if ($result->getStatusCode() == 202) {
         return 'success';
       } else {
@@ -223,9 +218,8 @@ class CSApi
 
   public function toggleSuspendedService($subscription_id, $action) {
     try {
-      $auth_token = $this->authToken();
       $path = 'subscriptions/' . $subscription_id . '/suspension?find_by_external_id=true';
-      $response = $this->connect($path, $auth_token, null, $action);      
+      $response = $this->connect($path, null, $action);      
       if ($response->getStatusCode() == 202) {
         return 'success';
       } else {
@@ -255,10 +249,9 @@ class CSApi
 
   public function editClient($params) {    
     try {
-      $auth_token = $this->authToken();
       // Determine if this is a real user..
       $remote_user_path = 'users/' . $params['userid'] . '?find_by_external_id=true';
-      $remote_user = $this->connect($remote_user_path, $auth_token, null, 'GET');
+      $remote_user = $this->connect($remote_user_path, null, 'GET');
       if ($remote_user->getStatusCode() == 202) {
         $remote_data = json_decode($remote_user->getBody());
         $update_data = [
@@ -266,11 +259,29 @@ class CSApi
             'fname' => $params['firstname'],
             'lname' => $params['lastname'],
             'email' => $params['email'],
-            'country' => $params['country']
+            'country' => $params['country'],
+            'city' => $params['city'],
+            'state' => $params['state'],
+            'address1' => $params['address1'],
+            'address2' => $params['address2'],
+            'zip' => $params['postcode']
           ]
         ];
         $update_path = 'users/' . $remote_data->user->id;
-        $response = $this->connect($update_path, $auth_token, $update_data, 'PUT');
+        $response = $this->connect($update_path, $update_data, 'PUT');
+        if ($response->getStatusCode() == 202) {
+          return 'success';
+        } else {
+          $errorMsg = json_decode($response->getBody());
+          logModuleCall(
+            'computestacks',
+            __FUNCTION__,
+            $errorMsg,
+            "error updating user",
+            null
+          );
+          return implode(" ", $errorMsg);
+        }
         return 'success';
       }
     } catch (Exception $e) {
@@ -288,12 +299,11 @@ class CSApi
 
   public function clientHas2fa($clientid, $remote_ip) {
     try {
-      $auth_token = $this->authToken();
       $data = array(
         'headers' => [
-          'Accept' => 'application/json; api_version=41',
+          'Accept' => 'application/json; api_version=51',
           'Content-Type' => 'application/json',
-          'Authorization' => $auth_token
+          'Authorization' => 'Basic ' + base64_encode(self::$api_key + ':' + self::$api_secret)
         ]
       );
       $client = new Client();
@@ -317,43 +327,34 @@ class CSApi
     }
   }
 
-  // Generate auth token to log into CS using apikey / secret.
-  public function authToken() {
-    $data = [
-      'headers' => [
-        'Accept' => 'application/json; api_version=41',
-        'Content-Type' => 'application/json'
-      ],
-      'json' => [
-        'api_key' => self::$api_key,
-        'api_secret' => self::$api_secret
-      ]
-    ];
-    $client = new Client();
-    $path = self::$endpoint . '/api/auth';
-    $request = $client->createRequest('POST', $path, $data);
-    $response = $client->send($request);
-    $result = json_decode($response->getBody());
-    return $result->token;
-
-  }
-
-  public function testConnection() {    
-    $auth_token = $this->authToken();
-    if (strlen($auth_token) > 1) {
-      return 'success';
-    } else {
-      return 'Failed to connect.';
+  public function testConnection() {
+    try {
+      $result = $this->connect('locations', null, 'GET');
+      if ($result->getStatusCode() == 200) {
+        return 'success';
+      } else {
+        return 'Failed to connect';
+      }
+    } catch (Exception $e) {
+      logModuleCall(
+        'computestacks',
+        __FUNCTION__,
+        "computestacks test",
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+      return $e->getMessage(); 
     }
   }
 
   // API Call to CS.
-  private function connect($path, $token, $body, $method = 'POST') {
+  private function connect($path, $body, $method = 'POST') {
+    $basic_auth = base64_encode(self::$api_key . ':' . self::$api_secret);
     $data = array(
       'headers' => [
-        'Accept' => 'application/json; api_version=41',
+        'Accept' => 'application/json; api_version=51',
         'Content-Type' => 'application/json',
-        'Authorization' => $token
+        'Authorization' => 'Basic ' . $basic_auth
       ]
     );
     if ($body != null) {
