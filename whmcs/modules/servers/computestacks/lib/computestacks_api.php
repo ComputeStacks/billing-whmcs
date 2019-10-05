@@ -66,7 +66,7 @@ class CSApi
         "product_id" => $product_id,
         "exp" => time() + 3600, // 1 hour TTL.
       );
-      $jwt = JWT::encode($data, self::$shared_secret);
+      $jwt = JWT::encode($data, self::$shared_secret, 'HS256');
       return self::$endpoint . "/api/webhooks/order_redirects?token=" . $jwt;
     } catch (Exception $e) {
       logModuleCall(
