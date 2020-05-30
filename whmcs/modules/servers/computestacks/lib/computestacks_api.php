@@ -25,8 +25,6 @@ class CSApi
   /*
    * Create Account
    *
-   * TODO: Investigate self::$context['clientsdetails']['uuid'] for SSO.
-   *
    */
   public function createAccount() {
     try {
@@ -102,7 +100,7 @@ class CSApi
       $result = $this->client('admin/users/' . self::$context['serviceid'] . '/user_sso?find_by_external_id=true', $data, 'POST');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
         $response = json_decode($result->getBody());
-        $redirectUrl = 'https://' . self::$endpoint . '/?from_admin=true&username=' . $response->username . '&token=' . $response->token;
+        $redirectUrl = 'https://' . self::$endpoint . '/?username=' . $response->username . '&token=' . $response->token;
         return array( 'success' => true, 'redirectTo' => $redirectUrl );
       } else {
         return array( 'success' => false );
