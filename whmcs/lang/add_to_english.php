@@ -1,1 +1,0 @@
-$_LANG['cs_return'] = "&laquo; Back to ComputeStacks";

@@ -1,8 +1,16 @@
 # ComputeStacks WHMCS
 
-The ComputeStacks integration for WHMCS has multiple parts: 
+## v2 Notes
+
+* Each service = 1 account in CS
+* `external_id` in CS is now the `clientid` in WHMCS
+* Removed addon, templates, and lang directory as they are no longer used.
+
+## Old Readme
+
+The ComputeStacks integration for WHMCS has multiple parts:
   - WHMCS Addon Module
-    + A way to store settings unique to your deployment with WHMCS. 
+    + A way to store settings unique to your deployment with WHMCS.
   - WHMCS Provisioning Module
     + Handles Creating, Terminating, Upgrading, Suspension, and Plan / QTY changes
   - ComputeStacks direct API Integration
@@ -16,13 +24,13 @@ The ComputeStacks integration for WHMCS has multiple parts:
 
 ### End-User Flow
 
-When a new order is placed with ComputeStacks (new orders, and changes to existing services), an API call is made to WHMCS to setup the order and determine if any amount is owed. 
+When a new order is placed with ComputeStacks (new orders, and changes to existing services), an API call is made to WHMCS to setup the order and determine if any amount is owed.
 
-If an invoice is generated with a balance, ComputeStacks will craft a signed URL that will allow the user to seamlessly move to the invoice screen within WHMCS as their user. 
+If an invoice is generated with a balance, ComputeStacks will craft a signed URL that will allow the user to seamlessly move to the invoice screen within WHMCS as their user.
 
 When a successful payment is received, a hook in WHMCS will craft a signed URL and send the user back to ComputeStacks.
 
-The normal provisioning module will actually tell ComputeStacks to proceed with the order. 
+The normal provisioning module will actually tell ComputeStacks to proceed with the order.
 
 ## Minimum Requirements
 
@@ -31,6 +39,6 @@ The normal provisioning module will actually tell ComputeStacks to proceed with 
 
 ## Installation
 
-See [ComputeStacks WHMCS Documentation](https://www.notion.so/computestacks/WHMCS-Plugin-Installation-80e83cbcd4184b2faedb8fc4ff0ea3b9).
+~~See [ComputeStacks WHMCS Documentation](https://www.notion.so/computestacks/WHMCS-Plugin-Installation-80e83cbcd4184b2faedb8fc4ff0ea3b9).~~
 
 

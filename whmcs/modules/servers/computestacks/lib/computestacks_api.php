@@ -2,353 +2,214 @@
 /**
  * ComputeStacks API
  *
- * @see https://www.notion.so/WHMCS-Integration-80e83cbcd4184b2faedb8fc4ff0ea3b9
- *
- * @copyright Copyright (c)2017 Compute Stacks, LLC.
+ * @copyright Copyright (c)2020 Compute Stacks, LLC.
  *
  */
 
-require_once 'vendor/autoload.php';
-use \Firebase\JWT\JWT;
-use \GuzzleHttp\Client;
-use WHMCS\Database\Capsule;
-
+use GuzzleHttp\Client; // whmcs v7.10.2 uses guzzle v5.3.3
 class CSApi
 {
 
   private static $endpoint = null;
   private static $api_key = null;
   private static $api_secret = null;
-  private static $shared_secret = null;
-  private static $require_auth = false;
+  private static $context = null;
 
-  // Load credentials from Addon.
-  function __construct() {
-    $configs = Capsule::table('tbladdonmodules')->where('module', 'computestacks')->get();
-    foreach($configs as $config) {
-      switch ($config->setting) {
-        case 'endpoint':
-          self::$endpoint = $config->value;
-          break;
-        case 'api_key':
-          self::$api_key = $config->value;
-          break;
-        case 'api_secret':
-          self::$api_secret = $config->value;
-          break;
-        case 'shared_secret':
-          self::$shared_secret = $config->value;
-          break;
-        case 'require_auth':
-          if ($config->value == 'on') {
-            self::$require_auth = true;
-          } else {
-            self::$require_auth = false;
-          }
-          break;
-      }
-    }
+  function __construct($params) {
+    self::$endpoint = $params['serverhostname'];
+    self::$api_key = $params['serverusername'];
+    self::$api_secret = $params['serverpassword'];
+    self::$context = $params;
   }
 
-  public function settings() {
-    return array(
-      'endpoint' => self::$endpoint,
-      'api_key' => self::$api_key,
-      'require_auth' => self::$require_auth,
+  /*
+   * Create Account
+   *
+   * TODO: Investigate self::$context['clientsdetails']['uuid'] for SSO.
+   *
+   */
+  public function createAccount() {
+    try {
+      $data = array(
+        'user' => array(
+          'skip_email_confirm' => true,
+          'external_id' => self::$context['serviceid'],
+          'fname' => self::$context['clientsdetails']['firstname'],
+          'lname' => self::$context['clientsdetails']['lastname'],
+          'email' => $this->generateUsername(),
+          'password' => self::$context['password'],
+          'password_confirmation' => self::$context['password'],
+          'address1' => self::$context['clientsdetails']['address1'],
+          'address2' => self::$context['clientsdetails']['address2'],
+          'city' => self::$context['clientsdetails']['city'],
+          'state' => self::$context['clientsdetails']['fullstate'],
+          'zip' => self::$context['clientsdetails']['postcode'],
+          'country' => self::$context['clientsdetails']['country'],
+          'phone' => self::$context['clientdetails']['telephoneNumber'],
+        )
+      );
+      $result = $this->client('admin/users', $data, 'POST');
+      if ( !$this->apiSuccess($result->getStatusCode()) ) {
+        return $result->getBody();
+      }
+    } catch(Exception $e) {
+      logModuleCall(
+        'computestacks',
+        __FUNCTION__,
+        $data,
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+      return $e->getMessage();
+    }
+    return 'success';
+  }
+
+  public function setPassword() {
+    $data = array(
+      'user' => array(
+        'password' => self::$context['password'],
+        'password_confirmation' => self::$context['password'],
+      )
     );
+    return $this->updateUser($data);
   }
 
-  // Generate Redirect URL to send the user BACK to computestacks, after payment is confirmed.
-  public function buildOrderRedirect($product_id) {
-    try {
-      $data = array(
-        "status" => 'ok',
-        "product_id" => $product_id,
-        "exp" => time() + 3600, // 1 hour TTL.
-      );
-      $jwt = JWT::encode($data, self::$shared_secret, 'HS256');
-      return self::$endpoint . "/api/webhooks/order_redirects?token=" . $jwt;
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        $product_id,
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage();
-    }    
+  // Suspend Account
+  public function suspendAccount() {
+    $data = array(
+      'user' => array(
+        'active' => false,
+      )
+    );
+    return $this->updateUser($data);
   }
 
+  // Activate Account
+  public function activateAccount() {
+    $data = array(
+      'user' => array(
+        'active' => true,
+      )
+    );
+    return $this->updateUser($data);
+  }
 
-  public function orderProvision($orderid) {
+  // Generate User SSO Link
+  public function serviceLoginRedirect(): array {
+
     try {
-      if ($orderid == null) {
-        return "Missing OrderID";
-      }
-      $path = 'orders/' . $orderid . '/process_order?find_by_external_id=true';
-      $result = $this->connect($path, null, 'POST');
-      if ($result->getStatusCode() == 202) {
-        return 'success';
+      $result = $this->client('admin/users/' . self::$context['serviceid'] . '/user_sso?find_by_external_id=true', $data, 'POST');
+      if ( $this->apiSuccess($result->getStatusCode()) ) {
+        $response = json_decode($result->getBody());
+        $redirectUrl = 'https://' . self::$endpoint . '/?from_admin=true&username=' . $response->username . '&token=' . $response->token;
+        return array( 'success' => true, 'redirectTo' => $redirectUrl );
       } else {
-        $errorMsg = json_decode($result->getBody());
-        logModuleCall(
-          'computestacks',
-          __FUNCTION__,
-          $errorMsg,
-          "Order Error",
-          null
-        );
-        return implode(" ", $errorMsg);
+        return array( 'success' => false );
       }
     } catch (Exception $e) {
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        $params,
+        "generate SSO token",
         $e->getMessage(),
         $e->getTraceAsString()
       );
-      return $e->getMessage();
-    }    
-  }
-
-  public function modifyDeviceService($subscription_id, $product_id) {
-    try {
-      $data = array(
-        'device' => array(
-          'package_id' => $product_id,
-          'external_product' => true
-        )
-      );
-      $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
-      $result = $this->connect($path, $data, 'PUT');
-      if ($result->getStatusCode() == 200) {
-        return 'success';
-      } else {
-        $errorMsg = json_decode($result->getBody());
-        logModuleCall(
-          'computestacks',
-          __FUNCTION__,
-          $errorMsg,
-          "Modify Service Error",
-          null
-        );
-        return implode(" ", $errorMsg);
-      }
-      
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        "modifyDeviceServices Fatal Error",
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage();
-    } 
-  }
-
-  public function modifyContainerService($subscription_id, $product_id, $qty) {
-    try {
-      $data = array(
-        'container_service' => array(
-          'package_id' => $product_id,
-          'external_product' => true,
-          'qty' => $qty
-        )
-      );
-      $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
-      $result = $this->connect($path, $data, 'PUT');
-      if ($result->getStatusCode() == 200) {
-        return 'success';
-      } else {
-        $errorMsg = json_decode($result->getBody());
-        logModuleCall(
-          'computestacks',
-          __FUNCTION__,
-          $errorMsg,
-          "Modify Service Error",
-          null
-        );
-        return implode(" ", $errorMsg);
-      }
-      
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        "modifyContainerService fatal error",
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage();
-    }    
-  }
-
-  public function destroyService($subscription_id) {
-    try {
-      $path = 'subscriptions/' . $subscription_id . '?find_by_external_id=true&from_billing=true';
-      $result = $this->connect($path, null, 'DELETE');
-      if ($result->getStatusCode() == 202) {
-        return 'success';
-      } else {
-        $errorMsg = json_decode($result->getBody());
-        logModuleCall(
-          'computestacks',
-          __FUNCTION__,
-          $errorMsg,
-          "Delete Service Error",
-          null
-        );
-        return implode(" ", $errorMsg);
-      }
-      
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        "destroyService fatal error",
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage();
-    }    
-  }
-
-  public function toggleSuspendedService($subscription_id, $action) {
-    try {
-      $path = 'subscriptions/' . $subscription_id . '/suspension?find_by_external_id=true';
-      $response = $this->connect($path, null, $action);      
-      if ($response->getStatusCode() == 202) {
-        return 'success';
-      } else {
-        $errorMsg = json_decode($response->getBody());
-        logModuleCall(
-          'computestacks',
-          __FUNCTION__,
-          $errorMsg,
-          "Toggle Service Suspension Error",
-          null
-        );
-        return implode(" ", $errorMsg);
-      }
-
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        "toggleSuspendedService fatal error",
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage();
-    }    
-
-  }
-
-  public function editClient($params) {    
-    try {
-      // Determine if this is a real user..
-      $remote_user_path = 'users/' . $params['userid'] . '?find_by_external_id=true';
-      $remote_user = $this->connect($remote_user_path, null, 'GET');
-      if ($remote_user->getStatusCode() == 200) {
-        $remote_data = json_decode($remote_user->getBody());
-        $update_data = [
-          'user' => [
-            'fname' => $params['firstname'],
-            'lname' => $params['lastname'],
-            'email' => $params['email'],
-            'country' => $params['country'],
-            'city' => $params['city'],
-            'state' => $params['state'],
-            'address1' => $params['address1'],
-            'address2' => $params['address2'],
-            'zip' => $params['postcode']
-          ]
-        ];
-        $update_path = 'users/' . $remote_data->user->id;
-        $response = $this->connect($update_path, $update_data, 'PUT');
-        if ($response->getStatusCode() == 202) {
-          return 'success';
-        } else {
-          $errorMsg = json_decode($response->getBody());
-          logModuleCall(
-            'computestacks',
-            __FUNCTION__,
-            $errorMsg,
-            "error updating user",
-            null
-          );
-          return implode(" ", $errorMsg);
-        }
-        return 'success';
-      }
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        $params,
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage();
-    }   
-    
-  }
-
-  public function clientHas2fa($clientid, $remote_ip) {
-    try {
-      $data = array(
-        'headers' => [
-          'Accept' => 'application/json; api_version=51',
-          'Content-Type' => 'application/json',
-          'Authorization' => 'Basic ' + base64_encode(self::$api_key + ':' + self::$api_secret)
-        ]
-      );
-      $client = new Client();
-      $path = self::$endpoint . '/api/user/' . $clientid . '/authcheck?rip=' . $remote_ip;
-      $request = $client->createRequest('POST', $path, $data);
-      $response = $client->send($request);
-      if ($response->getStatusCode() == 202) {
-        return 'success';
-      } else {
-        return 'failed';
-      }
-    } catch (Exception $e) {
-      logModuleCall(
-        'computestacks',
-        __FUNCTION__,
-        "clientHas2FA fatal error",
-        $e->getMessage(),
-        $e->getTraceAsString()
-      );
-      return $e->getMessage(); 
+      return array( 'success' => false );
     }
   }
 
+  /*
+   * Account Termination
+   *
+   * We don't let WHMCS actually delete accounts. This will suspend them and require manual removal later.
+   *
+   */
+  public function terminateAccount() {
+    return $this->suspendAccount();
+  }
+
+  // Test connection to CS
   public function testConnection() {
     try {
-      $result = $this->connect('locations', null, 'GET');
-      if ($result->getStatusCode() == 200) {
-        return 'success';
+      $result = $this->client('admin/locations', null, 'GET');
+      if ( $this->apiSuccess($result->getStatusCode()) ) {
+        return array(
+          'success' => true,
+          'error' => ''
+        );
       } else {
-        return 'Failed to connect';
+        return array(
+          'success' => false,
+          'error' => "Status Code: " . $result->getStatusCode() . " | ERROR: " . $result->getBody()
+        );
       }
     } catch (Exception $e) {
       logModuleCall(
         'computestacks',
         __FUNCTION__,
-        "computestacks test",
+        "computestacks test connection",
         $e->getMessage(),
         $e->getTraceAsString()
       );
-      return $e->getMessage(); 
+      return false;
     }
   }
 
-  // API Call to CS.
-  private function connect($path, $body, $method = 'POST') {
+  // Generate a salted username for this service
+  private function generateUsername(): string {
+    $customer_email = self::$context['clientsdetails']['email'];
+
+    // Determine if the current context username is an email address
+    $username_check = filter_var(self::$context['username'], FILTER_SANITIZE_EMAIL);
+
+    // If Username is already an email, use that, otherwise lets create one.
+    if( !filter_var( $username_check, FILTER_VALIDATE_EMAIL ) ) {
+      // Provide some uniqueness to the email to avoid collisions.
+      $email_salt = self::$context['clientsdetails']['userid'] . '-' . self::$context['serviceid'];
+      // If Username is blank, we will create one, otherewise use the username as the first part of the email
+      if (empty(self::$context['username'])) {
+        $username = explode('@', $customer_email)[0] . $email_salt . '@' . self::$endpoint;
+      } else {
+        $username = self::$context['username'] . $email_salt . '@' . self::$endpoint;
+      }
+      self::$context['model']->serviceProperties->save(['Username' => $username]);
+    } else {
+      $username = self::$context['username'];
+    }
+    return $username;
+  }
+
+  // Update a user with the given data
+  private function updateUser(array $data): string {
+    try {
+      $result = $this->client('admin/users/' . self::$context['serviceid'] . '?find_by_external_id=true', $data, 'PATCH');
+      if ( !$this->apiSuccess($result->getStatusCode()) ) {
+        return $result->getBody();
+      }
+    return 'success';
+    } catch(Exception $e) {
+      logModuleCall(
+        'computestacks',
+        __FUNCTION__,
+        $data,
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+      return $e->getMessage();
+    }
+  }
+
+  // Determine api status based on response code
+  private function apiSuccess(int $statusCode): bool {
+    if ( $statusCode < 200 || $statusCode > 204 ) {
+      return false;
+    }
+    return true;
+  }
+
+  // API Client
+  private function client($path, $body, $method = 'POST') {
     $basic_auth = base64_encode(self::$api_key . ':' . self::$api_secret);
     $data = array(
       'headers' => [
@@ -360,10 +221,9 @@ class CSApi
     if ($body != null) {
       $data['json'] = $body;
     }
-    $base_uri = self::$endpoint . '/api/admin/';
-    // ['base_uri' => $base_uri]
+    $full_uri = 'https://' . self::$endpoint . '/api/' . $path;
     $client = new Client();
-    $request = $client->createRequest($method, $base_uri . $path, $data);
+    $request = $client->createRequest($method, $full_uri, $data);
     return $client->send($request);
   }
 
