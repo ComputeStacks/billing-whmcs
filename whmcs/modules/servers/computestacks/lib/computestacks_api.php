@@ -23,8 +23,36 @@ class CSApi
   }
 
   /*
+   * Account Stats
+   */
+  public function accountStats(): array {
+    $return = array(
+      'projects' => '-',
+      'services' => '-',
+      'bill_estimate' => '-',
+    );
+    try {
+      $result = $this->client('admin/users/' . self::$context['serviceid'] . '?find_by_external_id=true', null, 'GET');
+      if ( $this->apiSuccess($result->getStatusCode()) ) {
+        $data = json_decode($result->getBody());
+        $return['projects'] = number_format($data->user->services->deployments, 0, '.', ',');
+        $return['services'] = number_format($data->user->services->container_services, 0, '.', ',');
+        $return['bill_estimate'] = $data->user->currency_symbol . number_format($data->user->run_rate, 2, '.', ',');
+      }
+    } catch(Exception $e) {
+      logModuleCall(
+        'computestacks accountStats',
+        __FUNCTION__,
+        $data,
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+    }
+    return $return;
+  }
+
+  /*
    * Create Account
-   *
    */
   public function createAccount() {
     try {

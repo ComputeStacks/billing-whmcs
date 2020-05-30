@@ -23,7 +23,7 @@ function computestacks_MetaData()
     'DisplayName' => 'ComputeStacks',
     'APIVersion' => '1.1',
     'RequiresServer' => true,
-    'ServiceSingleSignOnLabel' => 'Manage Service',
+    'ServiceSingleSignOnLabel' => 'Login',
   );
 }
 
@@ -35,6 +35,24 @@ function computestacks_ConfigOptions() {
       "Default" => "", // blank = default
     ],
   ];
+}
+
+function computestacks_ClientArea(array $params): array {
+  $cs = new CSApi($params);
+  return array(
+    'templatefile' => 'clientarea',
+    'vars' => $cs->accountStats(),
+  );
+}
+
+function computestacks_AdminServicesTabFields($params): array {
+  $cs = new CSApi($params);
+  $stats = $cs->accountStats();
+  return array(
+    'Projects' => $stats['projects'],
+    'Services' => $stats['services'],
+    'Run Rate' => $stats['bill_estimate'],
+  );
 }
 
 /*
