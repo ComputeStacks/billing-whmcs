@@ -31,6 +31,9 @@ class CSApi
       'services' => '-',
       'bill_estimate' => '-',
     );
+    if ( !$this->hasValidUsername() ) {
+      return $return;
+    }
     try {
       $result = $this->client('admin/users/' . self::$context['serviceid'] . '?find_by_external_id=true', null, 'GET');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
@@ -180,6 +183,14 @@ class CSApi
       );
       return false;
     }
+  }
+
+  // Determine if we have a username
+  // A username is created during account creation, so if we don't have one,
+  // don't load things like stats.
+  private function hasValidUsername(): bool {
+    $username_check = filter_var(self::$context['username'], FILTER_SANITIZE_EMAIL);
+    return filter_var( $username_check, FILTER_VALIDATE_EMAIL );
   }
 
   // Generate a salted username for this service
