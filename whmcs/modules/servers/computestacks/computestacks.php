@@ -24,17 +24,69 @@ function computestacks_MetaData()
     'APIVersion' => '1.1',
     'RequiresServer' => true,
     'ServiceSingleSignOnLabel' => 'Login',
+    // The display name of the unique identifier to be displayed on the table output
+    'ListAccountsUniqueIdentifierDisplayName' => 'Username',
+    // The field in the return that matches the unique identifier
+    'ListAccountsUniqueIdentifierField' => 'username',
+    // The config option indexed field from the _ConfigOptions function that identifies the product on the remote system
+    'ListAccountsProductField' => 'configoption1', // configoption1 = package
   );
 }
 
 function computestacks_ConfigOptions() {
   return [
-    "user_group_id" => [
-      "FriendlyName" => "User Group ID",
-      "Type" => "text",
-      "Default" => "", // blank = default
+    'package' => [ // configoption1
+      'FriendlyName' => 'User Group',
+      'Type' => 'text',
+      'Size' => '25',
+      'Loader' => 'computestacks_LoadUserGroups',
+      'SimpleMode' => true,
+    ],
+    'credit_amount' => [ // configoption2
+      'FriendlyName' => 'Apply Credit',
+      'Type' => 'yesno',
+      'Default' => 'yes',
+      'Description' => 'Apply product price as account credit',
+      'SimpleMode' => true,
     ],
   ];
+}
+
+/**
+ * Return an array of User Groups
+ */
+function computestacks_LoadUserGroups(array $params) {
+  /**
+   * Intentionally does not use `try{}`!
+   * WHMCS expects this to return an exception if there is a problem
+   */
+  $cs = new CSApi($params);
+  $result = $cs->listUserGroups();
+  if ( $result['success'] ) {
+    $groups = [];
+    foreach ($result['groups']->user_groups as $group) {
+      $groups[$group->id] = ucfirst($group->name);
+    }
+    return $groups;
+  } else {
+    throw new Exception($result['error']);
+  }
+}
+
+function computestacks_ListAccounts(array $params) {
+  try {
+    $cs = new CSApi($params);
+    return $cs->listAccounts();
+  } catch (Exception $e) {
+    logModuleCall(
+        'computestacks list accounts',
+        __FUNCTION__,
+        $params,
+        $e->getMessage(),
+        $e->getTraceAsString()
+    );
+    return array( 'success' => true, 'error' => $e->getMessage() );
+  }
 }
 
 function computestacks_ClientArea(array $params): array {
@@ -177,7 +229,6 @@ function computestacks_TestConnection(array $params)
       $e->getMessage(),
       $e->getTraceAsString()
     );
-    $success = false;
-    $errorMsg = $e->getMessage();
+    return $e->getMessage();
   }
 }

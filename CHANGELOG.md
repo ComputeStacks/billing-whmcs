@@ -1,7 +1,10 @@
 # Changelog
 
-## v2
+## v2 - June 2, 2020
 
+* Service in WHMCS = Account in CS.
+* Support for importing/syncing users using the WHMCS server sync tool.
+* Ability to apply the price of the product as an account credit after payment is received on the first order.
 
 ***
 

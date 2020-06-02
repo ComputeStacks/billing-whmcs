@@ -15,11 +15,24 @@ class CSApi
   private static $api_secret = null;
   private static $context = null;
 
+  // How we find the user in CS
+  private static $selector = null;
+  private static $selector_kind = 'find_by_external_id=true'; // or 'find_by_email=true'
+
   function __construct($params) {
     self::$endpoint = $params['serverhostname'];
     self::$api_key = $params['serverusername'];
     self::$api_secret = $params['serverpassword'];
     self::$context = $params;
+
+    // If the username exists in the params hash, we will use that to find the user
+    // Otherwise, default to serviceid. However, serviceid won't work for imported accounts until ComputeStacks has a chance to sync.
+    if (array_key_exists('username', $params)) {
+      self::$selector = urlencode(base64_encode($params['username']));
+      self::$selector_kind = 'find_by_email=true';
+    } else {
+      self::$selector = $params['serviceid'];
+    }
   }
 
   /*
@@ -35,7 +48,7 @@ class CSApi
       return $return;
     }
     try {
-      $result = $this->client('admin/users/' . self::$context['serviceid'] . '?find_by_external_id=true', null, 'GET');
+      $result = $this->client('admin/users/' . self::$selector . '?' . self::$selector_kind, null, 'GET');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
         $data = json_decode($result->getBody());
         $return['projects'] = number_format($data->user->services->deployments, 0, '.', ',');
@@ -94,9 +107,64 @@ class CSApi
     return 'success';
   }
 
+  public function listAccounts(): array {
+
+    try {
+      $response = $this->client('admin/users', null, 'GET');
+      if ( !$this->apiSuccess($response->getStatusCode()) ) {
+        return array( 'success' => false, 'error' => $response->getBody());
+      }
+      $accounts = [];
+      $users = json_decode($response->getBody());
+      foreach($users->users as $user) {
+        // Dont include admin users
+        if ( !($user->is_admin) ) {
+          if ($user->active) {
+            $status = WHMCS\Service\Status::ACTIVE;
+          } else {
+            $status = WHMCS\Service\Status::INACTIVE;
+          }
+          $accounts[] = [
+            'email' => $user->email,
+            'username' => $user->email,
+            'domain' => '',
+            'uniqueIdentifier' => $user->email,
+            'product' => $user->user_group->id,
+            'primaryip' => '',
+            'created' => date('Y-m-d H:i:s', strtotime($user->created_at)),
+            'status' => $status,
+          ];
+        }
+      }
+    } catch(Exception $e) {
+      logModuleCall(
+        'computestacks',
+        __FUNCTION__,
+        'Fatal error generating account list for ComputeStacks',
+        $e->getMessage(),
+        $e->getTraceAsString()
+      );
+      return array( 'success' => false, 'error' => $e->getMessage());
+    }
+    return array( 'success' => true, 'accounts' => $accounts);
+  }
+
+  public function listUserGroups(): array {
+    $response = $this->client('admin/user_groups', null, 'GET');
+    if ( !$this->apiSuccess($response->getStatusCode()) ) {
+      return array( 'success' => false, 'error' => $response->getBody());
+    }
+    $groups = json_decode($response->getBody());
+    return array(
+      'success' => true,
+      'groups' => $groups,
+    );
+  }
+
   public function setPassword() {
     $data = array(
       'user' => array(
+        'external_id' => self::$context['serviceid'],
         'password' => self::$context['password'],
         'password_confirmation' => self::$context['password'],
       )
@@ -108,6 +176,7 @@ class CSApi
   public function suspendAccount() {
     $data = array(
       'user' => array(
+        'external_id' => self::$context['serviceid'],
         'active' => false,
       )
     );
@@ -118,6 +187,7 @@ class CSApi
   public function activateAccount() {
     $data = array(
       'user' => array(
+        'external_id' => self::$context['serviceid'],
         'active' => true,
       )
     );
@@ -126,9 +196,8 @@ class CSApi
 
   // Generate User SSO Link
   public function serviceLoginRedirect(): array {
-
     try {
-      $result = $this->client('admin/users/' . self::$context['serviceid'] . '/user_sso?find_by_external_id=true', $data, 'POST');
+      $result = $this->client('admin/users/' . self::$selector . '/user_sso?' . self::$selector_kind, null, 'POST');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
         $response = json_decode($result->getBody());
         $redirectUrl = 'https://' . self::$endpoint . '/?username=' . $response->username . '&token=' . $response->token;
@@ -214,13 +283,15 @@ class CSApi
     } else {
       $username = self::$context['username'];
     }
+    self::$selector = $username;
+    self::$selector_kind = 'find_by_email=true';
     return $username;
   }
 
   // Update a user with the given data
   private function updateUser(array $data): string {
     try {
-      $result = $this->client('admin/users/' . self::$context['serviceid'] . '?find_by_external_id=true', $data, 'PATCH');
+      $result = $this->client('admin/users/' . self::$selector . '?' . self::$selector_kind, $data, 'PATCH');
       if ( !$this->apiSuccess($result->getStatusCode()) ) {
         return $result->getBody();
       }
@@ -246,7 +317,14 @@ class CSApi
   }
 
   // API Client
-  private function client($path, $body, $method = 'POST') {
+  /**
+   * API Client
+   *
+   * $path: path after url, without leading or trailing slashes
+   * $data: json encoded data
+   * $method: One of (GET, POST, PATCH, PUT, DELETE)
+   */
+  private function client($path, $body, $method) {
     $basic_auth = base64_encode(self::$api_key . ':' . self::$api_secret);
     $data = array(
       'headers' => [

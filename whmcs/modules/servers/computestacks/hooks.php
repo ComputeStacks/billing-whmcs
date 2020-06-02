@@ -27,8 +27,10 @@ add_hook('OrderPaid', 1, function($vars) {
       $products = localAPI('GetProducts', array( 'pid' => $service['pid'] ));
       foreach($products['products']['product'] as $product) {
         if ($product['module'] == 'computestacks') {
-          // Add invoice line item amount to credit amount
-          $credit_amount += floatval($item['amount']);
+          if ($product['configoption2'] == 'on') {
+            // Add invoice line item amount to credit amount
+            $credit_amount += floatval($item['amount']);
+          }
         }
       };
     };
