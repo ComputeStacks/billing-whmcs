@@ -10,6 +10,10 @@ The ComputeStacks integration for WHMCS provides an easy onboarding experience f
 * Support for charging an initial deposit on registration
 * Import CS accounts into WHMCS using the [Server Sync Tool](https://docs.whmcs.com/Server_Sync_Tool)
 
+### Service Terminations
+
+This plugin will not delete any services in ComputeStacks. When a WHMCS service is terminated, this plugin suspends the account in ComputeStacks, which stops all running services. You will then need to manually delete the user. _If you wish to have WHMCS automatically delete the users in ComputeStacks, please contact your CS support team._
+
 ## Installation
 
 _**Note:** We require WHMCS v7.8+_
