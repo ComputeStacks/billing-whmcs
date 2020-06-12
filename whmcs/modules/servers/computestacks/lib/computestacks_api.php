@@ -88,6 +88,12 @@ class CSApi
           'zip' => self::$context['clientsdetails']['postcode'],
           'country' => self::$context['clientsdetails']['country'],
           'phone' => self::$context['clientdetails']['telephoneNumber'],
+          'merge_labels' => array(
+            'whmcs' => array(
+              'client_id' => self::$context['clientid'],
+              'service_id' => self::$context['serviceid']
+            ),
+          ),
         )
       );
       $result = $this->client('admin/users', $data, 'POST');
@@ -167,6 +173,12 @@ class CSApi
         'external_id' => self::$context['serviceid'],
         'password' => self::$context['password'],
         'password_confirmation' => self::$context['password'],
+        'merge_labels' => array(
+          'whmcs' => array(
+            'client_id' => self::$context['clientid'],
+            'service_id' => self::$context['serviceid']
+          ),
+        ),
       )
     );
     return $this->updateUser($data);
@@ -178,6 +190,12 @@ class CSApi
       'user' => array(
         'external_id' => self::$context['serviceid'],
         'active' => false,
+        'merge_labels' => array(
+          'whmcs' => array(
+            'client_id' => self::$context['clientid'],
+            'service_id' => self::$context['serviceid']
+          ),
+        ),
       )
     );
     return $this->updateUser($data);
@@ -189,6 +207,12 @@ class CSApi
       'user' => array(
         'external_id' => self::$context['serviceid'],
         'active' => true,
+        'merge_labels' => array(
+          'whmcs' => array(
+            'client_id' => self::$context['clientid'],
+            'service_id' => self::$context['serviceid']
+          ),
+        ),
       )
     );
     return $this->updateUser($data);
