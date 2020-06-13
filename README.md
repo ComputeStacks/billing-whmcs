@@ -32,7 +32,22 @@ _**Note:** You will need to generate API Credentials using an admin user in Comp
 
 Our integration is designed to work in conjunction with our User Group functionality within ComputeStacks. This is useful if you decide to offer different tiers of service.
 
-To create your initial product, simply choose the ComputeStacks module and a user group. If you want to charge an initial fee (e.g. $1 or $5), you can set that as a one time price for the product, and this plugin will automatically convert that to an account credit after the service has been setup.
+To create your ComputeStacks product, create a new product group and product with the settings:
+
+* Pricing:
+  * With Deposit: Choose OneTime fee and set your deposit amount
+  * Without Deposit: Choose Free
+* Module: ComputeStacks
+  * User Group: Your choice
+  * Apply Credit: If you added a one-time fee, you can optionally convert that to an account credit.
+    * _Note: This will take place at the moment the order is paid._
+  * Module Setup:
+    * With Account Credits, we recommend either:
+      * _**Automatically setup the product as soon as the first payment is received**_ (preferred for best user experience)
+      * _Automatically setup the product when you manually accept a pending order_
+    * Without Account Credits, we recommend either:
+      * _**Automatically setup the product as soon as an order is placed**_ (preferred for best user experience)
+      * _Automatically setup the product when you manually accept a pending order_
 
 ## Configure ComputeStacks
 

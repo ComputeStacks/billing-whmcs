@@ -13,10 +13,6 @@ if (!defined("WHMCS")) {
     die("This file cannot be accessed directly");
 }
 
-/*
- * Configuration Functions
- */
-
 function computestacks_MetaData()
 {
   return array(

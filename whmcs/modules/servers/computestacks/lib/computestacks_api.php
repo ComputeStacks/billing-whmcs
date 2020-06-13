@@ -25,8 +25,10 @@ class CSApi
     self::$api_secret = $params['serverpassword'];
     self::$context = $params;
 
-    // If the username exists in the params hash, we will use that to find the user
-    // Otherwise, default to serviceid. However, serviceid won't work for imported accounts until ComputeStacks has a chance to sync.
+    /**
+     * If the username exists in the params hash, we will use that to find the user
+     * Otherwise, default to serviceid. However, serviceid won't work for imported accounts unless you select 'reset password' during import.
+     */
     if (array_key_exists('username', $params)) {
       self::$selector = urlencode(base64_encode($params['username']));
       self::$selector_kind = 'find_by_email=true';
@@ -67,7 +69,7 @@ class CSApi
     return $return;
   }
 
-  /*
+  /**
    * Create Account
    */
   public function createAccount() {
@@ -241,7 +243,7 @@ class CSApi
     }
   }
 
-  /*
+  /**
    * Account Termination
    *
    * We don't let WHMCS actually delete accounts. This will suspend them and require manual removal later.
@@ -278,9 +280,11 @@ class CSApi
     }
   }
 
-  // Determine if we have a username
-  // A username is created during account creation, so if we don't have one,
-  // don't load things like stats.
+  /**
+   * Determine if we have a username
+   *
+   * We generate these during account creation, so if none exists, dont try and load any stats.
+   */
   private function hasValidUsername(): bool {
     $username_check = filter_var(self::$context['username'], FILTER_SANITIZE_EMAIL);
     return filter_var( $username_check, FILTER_VALIDATE_EMAIL );
@@ -340,7 +344,6 @@ class CSApi
     return true;
   }
 
-  // API Client
   /**
    * API Client
    *
@@ -361,7 +364,7 @@ class CSApi
       $data['json'] = $body;
     }
     $full_uri = 'https://' . self::$endpoint . '/api/' . $path;
-    $client = new Client();
+    $client = new Client(); // GuzzleHttp
     $request = $client->createRequest($method, $full_uri, $data);
     return $client->send($request);
   }
