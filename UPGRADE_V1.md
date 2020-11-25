@@ -1,7 +1,7 @@
 # Upgrading from v1 to v2
 
 ## Overview
-Version 2 of our WHMCS plugin is a major change from V1 and will require that updates are made to both ComputeStacks and WHMCS.
+Version 2+ of our WHMCS plugin is a major change from V1 and will require that updates are made to both ComputeStacks and WHMCS.
 
 ### Feature Table
 

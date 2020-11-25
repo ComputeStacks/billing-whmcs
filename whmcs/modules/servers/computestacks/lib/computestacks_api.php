@@ -6,7 +6,6 @@
  *
  */
 
-use GuzzleHttp\Client; // whmcs v7.10.2 uses guzzle v5.3.3
 class CSApi
 {
 
@@ -52,7 +51,7 @@ class CSApi
     try {
       $result = $this->client('admin/users/' . self::$selector . '?' . self::$selector_kind, null, 'GET');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
-        $data = json_decode($result->getBody());
+        $data = json_decode($result->getBody()->getContents());
         $return['projects'] = number_format($data->user->services->deployments, 0, '.', ',');
         $return['services'] = number_format($data->user->services->container_services, 0, '.', ',');
         $return['bill_estimate'] = $data->user->currency_symbol . number_format($data->user->run_rate, 2, '.', ',');
@@ -100,7 +99,7 @@ class CSApi
       );
       $result = $this->client('admin/users', $data, 'POST');
       if ( !$this->apiSuccess($result->getStatusCode()) ) {
-        return $result->getBody();
+        return $result->getBody()->getContents();
       }
     } catch(Exception $e) {
       logModuleCall(
@@ -120,10 +119,10 @@ class CSApi
     try {
       $response = $this->client('admin/users', null, 'GET');
       if ( !$this->apiSuccess($response->getStatusCode()) ) {
-        return array( 'success' => false, 'error' => $response->getBody());
+        return array( 'success' => false, 'error' => $response->getBody()->getContents());
       }
       $accounts = [];
-      $users = json_decode($response->getBody());
+      $users = json_decode($response->getBody()->getContents());
       foreach($users->users as $user) {
         // Dont include admin users
         if ( !($user->is_admin) ) {
@@ -160,9 +159,9 @@ class CSApi
   public function listUserGroups(): array {
     $response = $this->client('admin/user_groups', null, 'GET');
     if ( !$this->apiSuccess($response->getStatusCode()) ) {
-      return array( 'success' => false, 'error' => $response->getBody());
+      return array( 'success' => false, 'error' => $response->getBody()->getContents());
     }
-    $groups = json_decode($response->getBody());
+    $groups = json_decode($response->getBody()->getContents());
     return array(
       'success' => true,
       'groups' => $groups,
@@ -225,7 +224,7 @@ class CSApi
     try {
       $result = $this->client('admin/users/' . self::$selector . '/user_sso?' . self::$selector_kind, null, 'POST');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
-        $response = json_decode($result->getBody());
+        $response = json_decode($result->getBody()->getContents());
         $redirectUrl = 'https://' . self::$endpoint . '/?username=' . $response->username . '&token=' . $response->token;
         return array( 'success' => true, 'redirectTo' => $redirectUrl );
       } else {
@@ -265,7 +264,7 @@ class CSApi
       } else {
         return array(
           'success' => false,
-          'error' => "Status Code: " . $result->getStatusCode() . " | ERROR: " . $result->getBody()
+          'error' => "Status Code: " . $result->getStatusCode() . " | ERROR: " . $result->getBody()->getContents()
         );
       }
     } catch (Exception $e) {
@@ -321,7 +320,7 @@ class CSApi
     try {
       $result = $this->client('admin/users/' . self::$selector . '?' . self::$selector_kind, $data, 'PATCH');
       if ( !$this->apiSuccess($result->getStatusCode()) ) {
-        return $result->getBody();
+        return $result->getBody()->getContents();
       }
     return 'success';
     } catch(Exception $e) {
@@ -353,20 +352,19 @@ class CSApi
    */
   private function client($path, $body, $method) {
     $basic_auth = base64_encode(self::$api_key . ':' . self::$api_secret);
-    $data = array(
+    $client = new GuzzleHttp\Client([
+      'base_uri' => 'https://' . self::$endpoint . '/api/',
       'headers' => [
         'Accept' => 'application/json; api_version=51',
         'Content-Type' => 'application/json',
         'Authorization' => 'Basic ' . $basic_auth
       ]
-    );
-    if ($body != null) {
-      $data['json'] = $body;
+    ]);
+    if ($body == null) {
+      return $client->request($method, $path);
+    } else {
+      return $client->request($method, $path, [ 'json' => $body ]);
     }
-    $full_uri = 'https://' . self::$endpoint . '/api/' . $path;
-    $client = new Client(); // GuzzleHttp
-    $request = $client->createRequest($method, $full_uri, $data);
-    return $client->send($request);
   }
 
 }

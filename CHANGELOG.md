@@ -1,6 +1,14 @@
 # Changelog
 
-## v2 - June 2, 2020
+## v3.0.0 - Nov 24, 2020
+
+**BREAKING CHANGES**
+
+Now uses Guzzle v7, which is what is included in WHMCS v8.0.
+
+***
+
+## v2.0.0 - June 2, 2020
 
 * Service in WHMCS = Account in CS.
 * Support for importing/syncing users using the WHMCS server sync tool.

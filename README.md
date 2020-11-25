@@ -16,7 +16,9 @@ This plugin will not delete any services in ComputeStacks. When a WHMCS service 
 
 ## Installation
 
-_**Note:** We require WHMCS v7.8+_
+_**Note:** We require WHMCS v8+_
+
+For WHMCS versions before v8, please see [v2.0.0](https://github.com/ComputeStacks/billing-whmcs/releases/tag/v2.0.0).
 
 ### Upload Files
 Upload the plugin to your WHMCS server and move the `whmcs/modules/servers/computestacks` directory to the corresponding directory within your WHMCS installation.
