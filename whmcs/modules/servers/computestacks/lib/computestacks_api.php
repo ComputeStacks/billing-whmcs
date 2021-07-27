@@ -44,17 +44,19 @@ class CSApi
       'projects' => '-',
       'services' => '-',
       'bill_estimate' => '-',
+      'balance' => '-',
     );
     if ( !$this->hasValidUsername() ) {
       return $return;
     }
     try {
-      $result = $this->client('admin/users/' . self::$selector . '?' . self::$selector_kind, null, 'GET');
+      $result = $this->client('admin/users/' . self::$selector . '?include=balance&' . self::$selector_kind, null, 'GET');
       if ( $this->apiSuccess($result->getStatusCode()) ) {
         $data = json_decode($result->getBody()->getContents());
         $return['projects'] = number_format($data->user->services->deployments, 0, '.', ',');
         $return['services'] = number_format($data->user->services->container_services, 0, '.', ',');
         $return['bill_estimate'] = $data->user->currency_symbol . number_format($data->user->run_rate, 2, '.', ',');
+        $return['balance'] = $data->user->currency_symbol . number_format($data->user->unprocessed_usage, 2, '.', ',');
       }
     } catch(Exception $e) {
       logModuleCall(
@@ -355,7 +357,7 @@ class CSApi
     $client = new GuzzleHttp\Client([
       'base_uri' => 'https://' . self::$endpoint . '/api/',
       'headers' => [
-        'Accept' => 'application/json; api_version=51',
+        'Accept' => 'application/json; api_version=60',
         'Content-Type' => 'application/json',
         'Authorization' => 'Basic ' . $basic_auth
       ]

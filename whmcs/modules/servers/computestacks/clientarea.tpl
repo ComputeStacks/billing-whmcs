@@ -31,6 +31,11 @@
         ESTIMATED MONTHLY<br>
         <b>{$bill_estimate}</b>
       </li>
+      <li>
+        <i class="fa fa-money-bill-alt fa-fw"></i>
+        CURRENT USAGE<br>
+        <b>{$balance}</b>
+      </li>
     </ul>
   </div>
 </div>

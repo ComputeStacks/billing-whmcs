@@ -100,6 +100,7 @@ function computestacks_AdminServicesTabFields($params): array {
     'Projects' => $stats['projects'],
     'Services' => $stats['services'],
     'Run Rate' => $stats['bill_estimate'],
+    'Balance' => $stats['balance'],
   );
 }
 
@@ -161,7 +162,7 @@ function computestacks_TerminateAccount(array $params)
 function computestacks_UnsuspendAccount(array $params)
 {
   try {
-    $cs = new CSApi();
+    $cs = new CSApi($params);
     return $cs->activateAccount();
   } catch (Exception $e) {
     logModuleCall(
