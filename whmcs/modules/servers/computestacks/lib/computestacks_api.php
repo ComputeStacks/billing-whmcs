@@ -91,6 +91,7 @@ class CSApi
           'zip' => self::$context['clientsdetails']['postcode'],
           'country' => self::$context['clientsdetails']['country'],
           'phone' => self::$context['clientdetails']['telephoneNumber'],
+          'currency' => self::$context['clientdetails']['currency_code'],
           'merge_labels' => array(
             'whmcs' => array(
               'client_id' => self::$context['clientid'],
