@@ -132,7 +132,7 @@ class CSApi
           if ($user->active) {
             $status = WHMCS\Service\Status::ACTIVE;
           } else {
-            $status = WHMCS\Service\Status::INACTIVE;
+            $status = WHMCS\Service\Status::SUSPENDED;
           }
           $accounts[] = [
             'email' => $user->email,
