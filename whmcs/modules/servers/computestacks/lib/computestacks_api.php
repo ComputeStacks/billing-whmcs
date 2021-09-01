@@ -94,7 +94,7 @@ class CSApi
           'currency' => self::$context['clientdetails']['currency_code'],
           'merge_labels' => array(
             'whmcs' => array(
-              'client_id' => self::$context['clientid'],
+              'client_id' => self::$context['clientsdetails']['client_id'],
               'service_id' => self::$context['serviceid']
             ),
           ),
@@ -179,7 +179,7 @@ class CSApi
         'password_confirmation' => self::$context['password'],
         'merge_labels' => array(
           'whmcs' => array(
-            'client_id' => self::$context['clientid'],
+            'client_id' => self::$context['clientsdetails']['client_id'],
             'service_id' => self::$context['serviceid']
           ),
         ),
@@ -196,7 +196,7 @@ class CSApi
         'active' => false,
         'merge_labels' => array(
           'whmcs' => array(
-            'client_id' => self::$context['clientid'],
+            'client_id' => self::$context['clientsdetails']['client_id'],
             'service_id' => self::$context['serviceid']
           ),
         ),
@@ -213,7 +213,7 @@ class CSApi
         'active' => true,
         'merge_labels' => array(
           'whmcs' => array(
-            'client_id' => self::$context['clientid'],
+            'client_id' => self::$context['clientsdetails']['client_id'],
             'service_id' => self::$context['serviceid']
           ),
         ),
